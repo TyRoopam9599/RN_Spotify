@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, SafeAreaView, ScrollView, View, Image, Pressable, FlatList } from 'react-native';
+import { navigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
@@ -8,7 +9,8 @@ import axios from 'axios';
 const HomeScreen = () => {
 
   const [userProfile, setUserProfile] = useState();
-  const [recentlyplayed, SetRecentlyPlayed] = useState([]);
+  const [recentlyPlayed, SetRecentlyPlayed] = useState([]);
+  const [topArtists, setTopArtists] = useState();
 
   const greetingMessage = () => {
     const currentTime = new Date().getHours();
@@ -34,6 +36,7 @@ const HomeScreen = () => {
         }
       })
       const data = await response.json();
+      // await SecureStore.setItemAsync("SpotifyID", data.id);
       setUserProfile(data);
       return data;
     } catch (error) {
@@ -55,9 +58,9 @@ const HomeScreen = () => {
           Authorization: `Bearer ${accessToken}`
         }
       })
-      console.log("response: ", response.data.items)
-      const tracks = await response.data.Items
-      //console.log("Tracks: ", tracks)
+
+      const tracks = await response.data.items;
+      //console.log("tracks:", response.data.items[0].id)
       SetRecentlyPlayed(tracks);
     } catch (err) {
       console.log(err.message)
@@ -68,20 +71,58 @@ const HomeScreen = () => {
     getRecentlyPlayedSong();
   }, [])
 
-  const handleItem = ({ item }) => {
-    console.log("item: ", item)
+  const renderItem = ({ item }) => {
     return (
-      <Pressable style={{flex:1, flexDirection: 'row', justifyContent:'space-between', marginHorizontal:10, marginVertical:8, backgroundColor:'#282828', borderRadius4, elevation3}}>
-        <Image source={{uri: item.track.album.images[0].url}} style={{height:55, width:55}}/>
-        <View style={{flex:1, marginHorizontal:8, justifyContent:'center'}}>
-          <Text style={styles.block3Text}>{item.track.name}</Text>
+      <Pressable style={{ flex: 1, flexDirection: "row", justifyContent: "space-between", marginVertical: 8, backgroundColor: "#282828", borderRadius: 4, elevation: 3 }}>
+        <Image style={styles.likePressable} source={{ uri: item.track.album.images[0].url }} />
+        <View style={{ flex: 1, marginHorizontal: 8, justifyContent: "center" }}>
+          <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: "bold", color: "white" }}>{item.track.name}</Text>
         </View>
       </Pressable>
-    )
-  }
+    );
+  };
+
+  const getTopArtists = async () => {
+    try {
+      const accessToken = await SecureStore.getItemAsync("spotifyAccessToken");
+      //console.log("ac token: ", accessToken)
+      if (!accessToken) {
+        console.log("Access token not found");
+        return;
+      }
+
+      const allArtistIds = []; 
+
+      for (let i = 0; i < recentlyPlayed.length; i++) {
+        const trackData = recentlyPlayed[i];
+        console.log("trackdata: ",trackData)
+        const trackArtists = trackData.track.artists;
+        for (let j = 0; j < trackArtists.length; j++) {
+          allArtistIds.push(trackArtists[j].id);
+        }
+      }
+      const artistIdsString = allArtistIds.join(',');
+
+      // const response = await axios.get(`https://api.spotify.com/v1/artists?ids=${artistIdsString}`, {
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //   }
+      // });
+
+      console.log("Top Artists: ", artistIdsString)
+      //setTopArtists(response.data.items);
+      // You can store the user's top song data in state or use it as needed
+    } catch (error) {
+      console.error('Error fetching user top song:', error);
+    }
+  };
+  useEffect(() => {
+    getTopArtists();
+  }, []);
+
   return (
     <LinearGradient colors={['#040306', '#131624']} style={{ flex: 1 }}>
-      <ScrollView style={{ marginTop: 35 }}>
+      <ScrollView style={{ marginTop: 35 }} >
 
         {/* first View */}
         <View style={styles.mainContainer1}>
@@ -122,7 +163,7 @@ const HomeScreen = () => {
 
           <View style={styles.MC3_Pressable}>
             <Image source={{ uri: "https://i.pravatar.cc/100" }} style={styles.likePressable} />
-            <View style={styles.randomArtist}>
+            <View>
               <Text style={styles.block3Text}>Hiphop Tamhiza</Text>
             </View>
           </View>
@@ -130,11 +171,22 @@ const HomeScreen = () => {
 
         {/* Fourth View*/}
         <FlatList
-          data={recentlyplayed}
-          renderItem={handleItem}
+          data={recentlyPlayed}
+          renderItem={renderItem}
           numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          columnWrapperStyle={{ flex: 1, marginHorizontal: 10, gap: 10 }}
+          nestedScrollEnabled={true}
         />
+
+        <Text style={{ color: "white", fontSize: 19, fontWeight: "bold", marginHorizontal: 10, marginTop: 10 }}>
+          Your Top Artists
+        </Text>
+
+        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {topArtists.map((item, index) => (
+            <ArtistCard item={item} key={index} />
+          ))}
+        </ScrollView> */}
 
       </ScrollView>
     </LinearGradient>
@@ -217,3 +269,92 @@ const styles = StyleSheet.create({
     color: 'white'
   }
 })
+
+
+// const HomeScreen = () => {
+//   const navigation = useNavigation();
+//   const [topArtists, setTopArtists] = useState([]);
+
+//   useEffect(() => {
+//     const getTopItems = async () => {
+//       try {
+//         const accessToken = await SecureStore.getItemAsync("spotifyAccessToken");
+//         if (!accessToken) {
+//           console.log("Access token not found");
+//           return;
+//         }
+//         const type = "artists";
+//         const response = await axios.get(
+//           `https://api.spotify.com/v1/me/top/${type}`,
+//           {
+//             headers: {
+//               Authorization: `Bearer ${accessToken}`,
+//             },
+//           }
+//         );
+//         setTopArtists(response.data.items);
+//       } catch (err) {
+//         console.log(err.message);
+//       }
+//     };
+
+//     getTopItems();
+//   }, []);
+//   console.log(recentlyplayed);
+//   return (
+//     <LinearGradient colors={["#040306", "#131624"]} style={{ flex: 1 }}>
+//       <ScrollView style={{ marginTop: 50 }}>
+
+//         <FlatList
+//           data={recentlyplayed}
+//           renderItem={renderItem}
+//           numColumns={2}
+//           columnWrapperStyle={{ justifyContent: "space-between" }}
+//         />
+
+//         <Text
+//           style={{
+//             color: "white",
+//             fontSize: 19,
+//             fontWeight: "bold",
+//             marginHorizontal: 10,
+//             marginTop: 10,
+//           }}
+//         >
+//           Your Top Artists
+//         </Text>
+
+//         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+//           {topArtists.map((item, index) => (
+//             <ArtistCard item={item} key={index} />
+//           ))}
+//         </ScrollView>
+
+//         <View style={{ height: 10 }} />
+//         <Text
+//           style={{
+//             color: "white",
+//             fontSize: 19,
+//             fontWeight: "bold",
+//             marginHorizontal: 10,
+//             marginTop: 10,
+//           }}
+//         >
+//           Recently Played
+//         </Text>
+//         <FlatList
+//           data={recentlyplayed}
+//           horizontal
+//           showsHorizontalScrollIndicator={false}
+//           renderItem={({ item, index }) => (
+//             <RecentlyPlayedCard item={item} key={index} />
+//           )}
+//         />
+//       </ScrollView>
+//     </LinearGradient>
+//   );
+// };
+
+// export default HomeScreen;
+
+// const styles = StyleSheet.create({});
