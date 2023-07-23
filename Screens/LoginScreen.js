@@ -33,7 +33,7 @@ const LoginScreen = () => {
 
     const handleSpotifyAuthentication = async () => {
         const clientId = 'YOUR_CLIENT_ID';
-        const redirectUri = 'REDIRECTED_URI';
+        const redirectUri = 'REDIRECT_URI';
         const scopes = [
             'user-top-read', 
             'user-read-email',
@@ -87,8 +87,8 @@ const LoginScreen = () => {
     
     const exchangeCodeForToken = async (code) => {
         const clientId = 'YOUR_CLIENT_ID';
-        const clientSecret = 'YOUR_CLIENT_SECRET';
-        const redirectUri = 'REDIRECTED_URI'; 
+        const clientSecret = 'CLIENT_SECRET';
+        const redirectUri = 'REDIRECT_URI'; 
         const authHeader = `Basic ${encode(`${clientId}:${clientSecret}`)}`;
 
         try {

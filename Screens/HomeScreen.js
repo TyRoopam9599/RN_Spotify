@@ -5,12 +5,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 import axios from 'axios';
+import ArtistCard from '../Components/ArtistsCard';
 
 const HomeScreen = () => {
 
   const [userProfile, setUserProfile] = useState();
-  const [recentlyPlayed, SetRecentlyPlayed] = useState([]);
-  const [topArtists, setTopArtists] = useState();
+  const [recentlyPlayed, setRecentlyPlayed] = useState(null);
+  const [topArtists, setTopArtists] = useState([]);
 
   const greetingMessage = () => {
     const currentTime = new Date().getHours();
@@ -60,8 +61,8 @@ const HomeScreen = () => {
       })
 
       const tracks = await response.data.items;
+      setRecentlyPlayed(tracks)
       //console.log("tracks:", response.data.items[0].id)
-      SetRecentlyPlayed(tracks);
     } catch (err) {
       console.log(err.message)
     }
@@ -70,6 +71,50 @@ const HomeScreen = () => {
   useEffect(() => {
     getRecentlyPlayedSong();
   }, [])
+
+  useEffect(() => {
+    const getTopArtists = async () => {
+      try {
+        const accessToken = await SecureStore.getItemAsync("spotifyAccessToken");
+        //console.log("ac token: ", accessToken)
+        if (!accessToken) {
+          console.log("Access token not found");
+          return;
+        }
+
+        const allArtistIds = new Set();
+
+        //console.log("recentlyPlayed: ", recentlyPlayed)
+        if (!recentlyPlayed) {
+          console.log("recentlyPlayed empty")
+          return;
+        }
+        for (const track of recentlyPlayed) {
+          const artists = track.track.artists;
+          for (const artist of artists) {
+            allArtistIds.add(artist.id);
+          }
+        }
+        const IdArray = Array.from(allArtistIds)
+        const artistIdsString = IdArray.join(',');
+        // console.log("artistsId: ", artistIdsString)
+        const response = await axios.get(`https://api.spotify.com/v1/artists?ids=${artistIdsString}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          }
+        });
+
+        // console.log("response top artists: ", response.data)
+        const data = await response.data.artists;
+        //console.log("data: ", data)
+        setTopArtists(data);
+        // You can store the user's top song data in state or use it as needed
+      } catch (error) {
+        console.error('Error fetching user top song:', error);
+      }
+    };
+    getTopArtists();
+  }, [recentlyPlayed])
 
   const renderItem = ({ item }) => {
     return (
@@ -81,44 +126,6 @@ const HomeScreen = () => {
       </Pressable>
     );
   };
-
-  const getTopArtists = async () => {
-    try {
-      const accessToken = await SecureStore.getItemAsync("spotifyAccessToken");
-      //console.log("ac token: ", accessToken)
-      if (!accessToken) {
-        console.log("Access token not found");
-        return;
-      }
-
-      const allArtistIds = []; 
-
-      for (let i = 0; i < recentlyPlayed.length; i++) {
-        const trackData = recentlyPlayed[i];
-        console.log("trackdata: ",trackData)
-        const trackArtists = trackData.track.artists;
-        for (let j = 0; j < trackArtists.length; j++) {
-          allArtistIds.push(trackArtists[j].id);
-        }
-      }
-      const artistIdsString = allArtistIds.join(',');
-
-      // const response = await axios.get(`https://api.spotify.com/v1/artists?ids=${artistIdsString}`, {
-      //   headers: {
-      //     Authorization: `Bearer ${accessToken}`,
-      //   }
-      // });
-
-      console.log("Top Artists: ", artistIdsString)
-      //setTopArtists(response.data.items);
-      // You can store the user's top song data in state or use it as needed
-    } catch (error) {
-      console.error('Error fetching user top song:', error);
-    }
-  };
-  useEffect(() => {
-    getTopArtists();
-  }, []);
 
   return (
     <LinearGradient colors={['#040306', '#131624']} style={{ flex: 1 }}>
@@ -182,11 +189,15 @@ const HomeScreen = () => {
           Your Top Artists
         </Text>
 
-        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {topArtists.map((item, index) => (
-            <ArtistCard item={item} key={index} />
-          ))}
-        </ScrollView> */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          { topArtists.length === 0 ? <></> :
+            (
+              topArtists.map((artist, index) => (
+                <ArtistCard name={artist.name} imageUrl={artist.images[0].url} key={index} />
+              ))
+            ) 
+          }
+        </ScrollView>
 
       </ScrollView>
     </LinearGradient>
