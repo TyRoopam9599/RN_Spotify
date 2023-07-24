@@ -1,10 +1,12 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Navigation from './StackNavigator';
+import { PlayerContext } from './PlayerContext';
 
 export default function App() {
   return (
-    <Navigation styles={styles.container} />
+    <PlayerContext>
+      <Navigation styles={styles.container} />
+    </PlayerContext>
   );
 }
 

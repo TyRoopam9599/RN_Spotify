@@ -5,13 +5,14 @@ import HomeScreen from './Screens/HomeScreen';
 import ProfileScreen from './Screens/ProfileScreen';
 import { Entypo, AntDesign, Ionicons } from "@expo/vector-icons";
 import LoginScreen from './Screens/LoginScreen';
+import LikedSongsScreen from './Screens/LikedSongsScreen';
 
 const Tab = createBottomTabNavigator();
 
 const BottomTabs = () => {
     return (
         <Tab.Navigator screenOptions={{
-            tabBarStyle:{
+            tabBarStyle: {
                 backgroundColor: "rgba(0,0,0,0.5)",
                 position: "absolute",
                 bottom: 0,
@@ -21,10 +22,10 @@ const BottomTabs = () => {
                 shadowRadius: 5,
                 elevation: 2,
                 shadowOffset: {
-                    width:0,
+                    width: 0,
                     height: -4
                 },
-                borderTopWidth:0
+                borderTopWidth: 0
             }
         }}>
             <Tab.Screen
@@ -67,11 +68,12 @@ const Navigation = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator>
-                <Stack.Screen name='Login' component={LoginScreen} options={{headerShown:false}} />
-                <Stack.Screen name='Main' component={BottomTabs} options={{headerShown:false}}/>
+                <Stack.Screen name='Login' component={LoginScreen} options={{ headerShown: false }} />
+                <Stack.Screen name='Main' component={BottomTabs} options={{ headerShown: false }} />
+                <Stack.Screen name='Liked' component={LikedSongsScreen} options={{ headerShown: false }} />
             </Stack.Navigator>
         </NavigationContainer>
     )
 }
 
-export default Navigation ;
+export default Navigation;
